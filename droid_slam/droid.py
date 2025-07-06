@@ -3,7 +3,7 @@ import lietorch
 import numpy as np
 
 from droid_net import DroidNet
-from depth_video import DepthVideo
+# from depth_video import DepthVideo
 from motion_filter import MotionFilter
 from droid_frontend import DroidFrontend
 from droid_backend import DroidBackend
@@ -11,7 +11,10 @@ from trajectory_filler import PoseTrajectoryFiller
 
 from collections import OrderedDict
 from torch.multiprocessing import Process
+# from visualizer.droid_visualizer import visualization_fn
 
+import depth_video
+import visualizer.droid_visualizer
 
 class Droid:
     def __init__(self, args):
@@ -21,7 +24,7 @@ class Droid:
         self.disable_vis = args.disable_vis
 
         # store images, depth, poses, intrinsics (shared between processes)
-        self.video = DepthVideo(args.image_size, args.buffer, stereo=args.stereo)
+        self.video = depth_video.DepthVideo(args.image_size, buffer=args.buffer, stereo=args.stereo)
 
         # filter incoming frames so that there is enough motion
         self.filterx = MotionFilter(self.net, self.video, thresh=args.filter_thresh)
@@ -34,8 +37,8 @@ class Droid:
 
         # visualizer
         if not self.disable_vis:
-            from visualizer.droid_visualizer import visualization_fn
-            self.visualizer = Process(target=visualization_fn, args=(self.video, None))
+            
+            self.visualizer = Process(target=visualizer.droid_visualizer.visualization_fn, args=(self.video, None))
             self.visualizer.start()
 
         # post processor - fill in poses for non-keyframes
@@ -67,6 +70,8 @@ class Droid:
 
             # local bundle adjustment
             self.frontend()
+            
+            self.video.update_disparity_with_pda()
 
     def terminate(self, stream=None):
         """ terminate the visualization process, return poses [t, q] """
