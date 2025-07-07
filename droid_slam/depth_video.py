@@ -27,6 +27,7 @@ class DepthVideo:
         self.disps = torch.ones(buffer, ht//8, wd//8, device=device, dtype=torch.float).share_memory_()
         self.disps_sens = torch.zeros(buffer, ht//8, wd//8, device=device, dtype=torch.float).share_memory_()
         self.disps_up = torch.zeros(buffer, ht, wd, device=device, dtype=torch.float).share_memory_()
+        self.disps_sens_up = torch.zeros(buffer, ht, wd, device=device, dtype=torch.float).share_memory_()
         self.intrinsics = torch.zeros(buffer, 4, device=device, dtype=torch.float).share_memory_()
 
         self.stereo = stereo
@@ -93,8 +94,11 @@ class DepthVideo:
             self.disps[index] = item[3]
 
         if item[4] is not None:
-            depth = item[4][3::8,3::8].cuda()
-            self.disps_sens[index] = torch.where(depth>0, 1.0/depth, depth)
+            
+            down_depth = item[4][3::8,3::8].cuda()
+            depth = item[4].cuda()
+            self.disps_sens[index] = torch.where(down_depth>0, 1.0/down_depth, down_depth)
+            self.disps_sens_up[index] = torch.where(depth>0, 1.0/depth, depth)
 
         if item[5] is not None:
             self.intrinsics[index] = item[5]
