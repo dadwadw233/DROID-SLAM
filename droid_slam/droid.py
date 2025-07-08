@@ -71,7 +71,7 @@ class Droid:
             # local bundle adjustment
             self.frontend()
             
-            self.video.update_disparity_with_pda()
+            # self.video.update_disparity_with_pda()
 
     def terminate(self, stream=None):
         """ terminate the visualization process, return poses [t, q] """
@@ -87,5 +87,8 @@ class Droid:
         self.backend(12)
 
         camera_trajectory = self.traj_filler(stream)
+        
+        self.video.update_disparity_with_pda()
+        
         return camera_trajectory.inv().data.cpu().numpy()
 
